@@ -1,0 +1,11 @@
+name: Social Post Linkedin
+type: module
+description: Social Post integration for Linkedin
+# core: 8.x
+package: Social
+configure: social_post_linkedin.settings_form
+dependencies:
+  - social_post
+
+# Information added by Drupal.org packaging script on 2017-04-20
+core: '8.x'
