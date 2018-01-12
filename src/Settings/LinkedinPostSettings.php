@@ -23,14 +23,6 @@ class LinkedinPostSettings extends SettingsBase implements LinkedinPostSettingsI
    */
   protected $clientSecret;
 
-
-  /**
-   * The default access token.
-   *
-   * @var string
-   */
-  protected $defaultToken;
-
   /**
    * {@inheritdoc}
    */

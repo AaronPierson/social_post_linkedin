@@ -4,15 +4,13 @@ namespace Drupal\social_post_linkedin\Plugin\Network;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Logger\LoggerChannelTrait;
+use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\Core\Render\MetadataBubblingUrlGenerator;
 use Drupal\social_api\SocialApiException;
 use Drupal\social_post\Plugin\Network\SocialPostNetwork;
 use Drupal\social_post_linkedin\Settings\LinkedinPostSettings;
+use League\OAuth2\Client\Provider\LinkedIn;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Logger\LoggerChannelFactory;
-
-use League\OAuth2\Client\Provider\Linkedin;
 
 /**
  * Defines Social Post Linkedin Network Plugin.
@@ -31,8 +29,6 @@ use League\OAuth2\Client\Provider\Linkedin;
  */
 class LinkedinPost extends SocialPostNetwork {
 
-  use LoggerChannelTrait;
-
   /**
    * The url generator.
    *
@@ -43,9 +39,9 @@ class LinkedinPost extends SocialPostNetwork {
   /**
    * Linkedin connection.
    *
-   * @var \League\OAuth2\Client\Provider\LinkedinOAuth
+   * @var \League\OAuth2\Client\Provider\LinkedIn
    */
-  protected $connection;
+  protected $client;
 
   /**
    * The Post text.
@@ -59,8 +55,14 @@ class LinkedinPost extends SocialPostNetwork {
    *
    * @var \Drupal\Core\Logger\LoggerChannelFactory
    */
-
   protected $loggerFactory;
+
+  /**
+   * The access token.
+   *
+   * @var string
+   */
+  protected $accessToken;
 
   /**
    * {@inheritdoc}
@@ -122,18 +124,19 @@ class LinkedinPost extends SocialPostNetwork {
 
     $class_name = '\League\OAuth2\Client\Provider\LinkedIn';
     if (!class_exists($class_name)) {
-      throw new SocialApiException(sprintf('The Linkedin Library for the league oAuth not found. Class: %s.', $class_name));
+      throw new SocialApiException(sprintf('The LinkedIn library for the PHP League OAuth2 Client not found. Class: %s.', $class_name));
     }
-    /* @var \Drupal\social_auth_linkedin\Settings\LinkedinAuthSettings $settings */
+    /* @var \Drupal\social_post_linkedin\Settings\LinkedinPostSettings $settings */
     $settings = $this->settings;
     if ($this->validateConfig($settings)) {
       // All these settings are mandatory.
       $league_settings = [
         'clientId' => $settings->getClientId(),
         'clientSecret' => $settings->getClientSecret(),
-        'redirectUri' => $GLOBALS['base_url']  . '/user/social-post/linkedin/auth/callback',
+        'redirectUri' => $GLOBALS['base_url'] . '/user/social-post/linkedin/auth/callback',
       ];
-      return new Linkedin($league_settings);
+
+      return new LinkedIn($league_settings);
     }
     return FALSE;
   }
@@ -153,12 +156,54 @@ class LinkedinPost extends SocialPostNetwork {
     $client_secret = $settings->getClientSecret();
     if (!$client_id || !$client_secret) {
       $this->loggerFactory
-        ->get('social_auth_linkedin')
+        ->get('social_post_linkedin')
         ->error('Define Client ID and Client Secret on module settings.');
       return FALSE;
     }
 
     return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function post() {
+    if (!$this->client) {
+      throw new SocialApiException('Call post() method from its wrapper doPost()');
+    }
+
+    /* @var \Psr\Http\Message\RequestInterface $request */
+    $request = $this->client->getAuthenticatedRequest(
+      'POST',
+      'https://api.linkedin.com/v1/people/~/shares?format=json',
+      $this->accessToken
+    );
+
+    $body = \GuzzleHttp\Psr7\stream_for($this->status);
+
+    $request = $request->withAddedHeader('Content-Type', 'application/json')
+      ->withAddedHeader('x-li-format', 'json')
+      ->withBody($body);
+
+    $response = $this->client->getHttpClient()->send($request);
+
+    if ($response->getStatusCode() !== 201) {
+      $this->loggerFactory->get('social_post_linkedin')->error($response->getBody()->__toString());
+      return FALSE;
+    }
+
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function doPost($access_token, $status) {
+    $this->accessToken = $access_token;
+    $this->status = $status;
+    $this->client = $this->getSdk();
+
+    return $this->post();
   }
 
 }

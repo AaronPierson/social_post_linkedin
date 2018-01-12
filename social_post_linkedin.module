@@ -71,19 +71,25 @@ function _social_post_linkedin_user_edit_form(AccountInterface $current_user) {
     '#empty' => t('You have not added any account yet'),
   ];
 
-  /* @var \Drupal\social_post_linkedin\Entity\LinkedinUser $account */
+  /* @var \Drupal\social_post\Entity\SocialPost $account */
   foreach ($accounts as $id => $account) {
     $form['social_post_linkedin']['accounts'][$id]['screen_name'] = [
       '#type' => 'link',
       '#title' => $account->getName(),
-      '#url' => Url::fromUri('https://linkedin.com/' . $account->getSocialNetworkID()),
+      '#url' => Url::fromUri('https://linkedin.com/' . $account->getProviderUserId()),
     ];
     $form['social_post_linkedin']['accounts'][$id]['operations'] = [
       '#type' => 'operations',
       '#links' => [
         'delete' => [
           'title' => t('Delete') ,
-          'url' => Url::fromRoute('entity.social_post.delete_form', ['provider' => 'linkedin', 'social_post' => $account->getId(), 'user' => TRUE]),
+          'url' => Url::fromRoute('entity.social_post.delete_form',
+            [
+              'provider' => 'linkedin',
+              'social_post' => $account->getId(),
+              'user' => $current_user->id(),
+            ]
+          ),
         ],
       ],
     ];

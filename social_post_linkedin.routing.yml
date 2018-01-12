@@ -10,9 +10,11 @@ social_post_linkedin.settings_form:
 social_post_linkedin.redirect_to_linkedin:
   path: '/user/social-post/linkedin/auth'
   defaults:
-    _controller: 'Drupal\social_post_linkedin\Controller\LinkedinPostController::redirectToFb'
+    _controller: 'Drupal\social_post_linkedin\Controller\LinkedinPostController::redirectToProvider'
   requirements:
     _permission: 'perform linkedin autoposting tasks'
+  options:
+      no_cache: TRUE
 
 social_post_linkedin.callback:
   path: '/user/social-post/linkedin/auth/callback'
@@ -20,3 +22,5 @@ social_post_linkedin.callback:
     _controller: 'Drupal\social_post_linkedin\Controller\LinkedinPostController::callback'
   requirements:
     _permission: 'perform linkedin autoposting tasks'
+  options:
+      no_cache: TRUE

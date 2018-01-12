@@ -11,8 +11,7 @@
         "source": "http://cgit.drupalcode.org/social_post_linkedin"
     },
     "require" : {
-        "league/oauth2-linkedin": "^2.0",
-        "linkedin/graph-sdk" : "~5.0"
+        "league/oauth2-linkedin": "^2.0"
     },
     "authors": [
         {

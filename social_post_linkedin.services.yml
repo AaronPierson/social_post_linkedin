@@ -1,4 +1,3 @@
 services:
-  linkedin_post.social_post_auth_manager:
+  linkedin_post.auth_manager:
     class: '\Drupal\social_post_linkedin\LinkedinPostAuthManager'
-    arguments: ['@session','@request_stack','@social_post.social_post_data_handler']

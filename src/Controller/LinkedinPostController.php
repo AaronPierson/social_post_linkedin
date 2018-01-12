@@ -35,7 +35,7 @@ class LinkedinPostController extends ControllerBase {
   /**
    * The Social Auth Data Handler.
    *
-   * @var \Drupal\social_auth\SocialAuthDataHandler
+   * @var \Drupal\social_post\SocialPostDataHandler
    */
   private $dataHandler;
 
@@ -71,27 +71,29 @@ class LinkedinPostController extends ControllerBase {
    *   Used to manage authentication methods.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request
    *   Used to access GET parameters.
-   * @param \Drupal\social_post\SocialPostDataHandler $social_auth_data_handler
+   * @param \Drupal\social_post\SocialPostDataHandler $data_handler
    *   SocialAuthDataHandler object.
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
    *   Used for logging errors.
    */
-  public function __construct(NetworkManager $network_manager, SocialPostManager $user_manager, LinkedinPostAuthManager $linkedin_manager, RequestStack $request, SocialPostDataHandler $social_auth_data_handler, LoggerChannelFactoryInterface $logger_factory) {
+  public function __construct(NetworkManager $network_manager,
+                              SocialPostManager $user_manager,
+                              LinkedinPostAuthManager $linkedin_manager,
+                              RequestStack $request,
+                              SocialPostDataHandler $data_handler,
+                              LoggerChannelFactoryInterface $logger_factory) {
 
     $this->networkManager = $network_manager;
     $this->postManager = $user_manager;
     $this->linkedinManager = $linkedin_manager;
     $this->request = $request;
-    $this->dataHandler = $social_auth_data_handler;
+    $this->dataHandler = $data_handler;
     $this->loggerFactory = $logger_factory;
 
-    // Sets session prefix for data handler.
-    $this->dataHandler->getSessionPrefix('social_post_linkedin');
+    $this->postManager->setPluginId('social_post_linkedin');
 
-    // Sets the plugin id.
-    // Sets the session keys to nullify if user could not logged in.
-    // $this->linkedinManager->setSessionKeysToNullify(['access_token']);.
-    $this->setting = $this->config('social_post_linkedin.settings');
+    // Sets session prefix for data handler.
+    $this->dataHandler->setSessionPrefix('social_post_linkedin');
   }
 
   /**
@@ -101,9 +103,9 @@ class LinkedinPostController extends ControllerBase {
     return new static(
       $container->get('plugin.network.manager'),
       $container->get('social_post.post_manager'),
-      $container->get('linkedin_post.social_post_auth_manager'),
+      $container->get('linkedin_post.auth_manager'),
       $container->get('request_stack'),
-      $container->get('social_post.social_post_data_handler'),
+      $container->get('social_post.data_handler'),
       $container->get('logger.factory')
     );
   }
@@ -111,13 +113,13 @@ class LinkedinPostController extends ControllerBase {
   /**
    * Redirects the user to Linkedin for authentication.
    */
-  public function redirectToFb() {
-    /* @var \League\OAuth2\Client\Provider\Linkedin false $linkedin */
+  public function redirectToProvider() {
+    /* @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
     $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
 
     // If linkedin client could not be obtained.
     if (!$linkedin) {
-      drupal_set_message($this->t('Social Auth Linkedin not configured properly. Contact site administrator.'), 'error');
+      drupal_set_message($this->t('Social Post Linkedin not configured properly. Contact site administrator.'), 'error');
       return $this->redirect('user.login');
     }
 
@@ -127,11 +129,11 @@ class LinkedinPostController extends ControllerBase {
     // Generates the URL where the user will be redirected for Linkedin login.
     // If the user did not have email permission granted on previous attempt,
     // we use the re-request URL requesting only the email address.
-    $linkedin_login_url = $this->linkedinManager->getFbLoginUrl();
+    $linkedin_login_url = $this->linkedinManager->getLoginUrl();
 
     $state = $this->linkedinManager->getState();
 
-    $this->dataHandler->set('oAuth2State', $state);
+    $this->dataHandler->set('oauth2state', $state);
 
     return new TrustedRedirectResponse($linkedin_login_url);
   }
@@ -158,10 +160,14 @@ class LinkedinPostController extends ControllerBase {
       return $this->redirect('user.login');
     }
 
-    $state = $this->dataHandler->get('oAuth2State');
-
+    $state = $this->dataHandler->get('oauth2state');
     // Retrieves $_GET['state'].
     $retrievedState = $this->request->getCurrentRequest()->query->get('state');
+    if (empty($retrievedState) || ($retrievedState !== $state)) {
+      $this->postManager->nullifySessionKeys();
+      drupal_set_message($this->t('LinkedIn login failed. Unvalid OAuth2 state.'), 'error');
+      return $this->redirect('user.login');
+    }
 
     $this->linkedinManager->setClient($linkedin)->authenticate();
 
@@ -170,9 +176,17 @@ class LinkedinPostController extends ControllerBase {
       return $this->redirect('user.login');
     }
 
-    if (!$this->postManager->checkIfUserExists($this->linkedinManager->getUserInfo()->getId())) {
-      $this->postManager->addRecord('social_post_linkedin', $this->linkedinManager->getUserInfo()->getId(), $this->linkedinManager->getAccessToken(), $this->linkedinManager->getUserInfo()->getFirstName(), '');
+    $user = $this->linkedinManager->getUserInfo();
+
+    if (!$this->postManager->checkIfUserExists($user->getId())) {
+      $name = $user->getFirstName() . ' ' . $user->getLastName();
+      $this->postManager->addRecord($name, $user->getId(), $this->linkedinManager->getAccessToken());
+      drupal_set_message('Account added successfully.', 'status');
     }
+    else {
+      drupal_set_message('You have already authorized to post on behalf of this user.', 'warning');
+    }
+
     return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
   }
 
