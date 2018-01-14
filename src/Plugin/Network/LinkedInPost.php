@@ -8,26 +8,26 @@ use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\Core\Render\MetadataBubblingUrlGenerator;
 use Drupal\social_api\SocialApiException;
 use Drupal\social_post\Plugin\Network\SocialPostNetwork;
-use Drupal\social_post_linkedin\Settings\LinkedinPostSettings;
+use Drupal\social_post_linkedin\Settings\LinkedInPostSettings;
 use League\OAuth2\Client\Provider\LinkedIn;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Defines Social Post Linkedin Network Plugin.
+ * Defines Social Post LinkedIn Network Plugin.
  *
  * @Network(
  *   id = "social_post_linkedin",
- *   social_network = "Linkedin",
+ *   social_network = "LinkedIn",
  *   type = "social_post",
  *   handlers = {
  *     "settings": {
- *        "class": "\Drupal\social_post_linkedin\Settings\LinkedinPostSettings",
+ *        "class": "\Drupal\social_post_linkedin\Settings\LinkedInPostSettings",
  *        "config_id": "social_post_linkedin.settings"
  *      }
  *   }
  * )
  */
-class LinkedinPost extends SocialPostNetwork {
+class LinkedInPost extends SocialPostNetwork {
 
   /**
    * The url generator.
@@ -37,7 +37,7 @@ class LinkedinPost extends SocialPostNetwork {
   protected $urlGenerator;
 
   /**
-   * Linkedin connection.
+   * LinkedIn connection.
    *
    * @var \League\OAuth2\Client\Provider\LinkedIn
    */
@@ -80,7 +80,7 @@ class LinkedinPost extends SocialPostNetwork {
   }
 
   /**
-   * LinkedinPost constructor.
+   * LinkedInPost constructor.
    *
    * @param \Drupal\Core\Render\MetadataBubblingUrlGenerator $url_generator
    *   Used to generate a absolute url for authentication.
@@ -114,7 +114,7 @@ class LinkedinPost extends SocialPostNetwork {
   /**
    * Sets the underlying SDK library.
    *
-   * @return \League\OAuth2\Client\Provider\Linkedin
+   * @return \League\OAuth2\Client\Provider\LinkedIn
    *   The initialized 3rd party library instance.
    *
    * @throws SocialApiException
@@ -126,7 +126,7 @@ class LinkedinPost extends SocialPostNetwork {
     if (!class_exists($class_name)) {
       throw new SocialApiException(sprintf('The LinkedIn library for the PHP League OAuth2 Client not found. Class: %s.', $class_name));
     }
-    /* @var \Drupal\social_post_linkedin\Settings\LinkedinPostSettings $settings */
+    /* @var \Drupal\social_post_linkedin\Settings\LinkedInPostSettings $settings */
     $settings = $this->settings;
     if ($this->validateConfig($settings)) {
       // All these settings are mandatory.
@@ -144,14 +144,14 @@ class LinkedinPost extends SocialPostNetwork {
   /**
    * Checks that module is configured.
    *
-   * @param \Drupal\social_post_linkedin\Settings\LinkedinPostSettings $settings
-   *   The Linkedin auth settings.
+   * @param \Drupal\social_post_linkedin\Settings\LinkedInPostSettings $settings
+   *   The Social Post LinkedIn settings.
    *
    * @return bool
    *   True if module is configured.
    *   False otherwise.
    */
-  protected function validateConfig(LinkedinPostSettings $settings) {
+  protected function validateConfig(LinkedInPostSettings $settings) {
     $client_id = $settings->getClientId();
     $client_secret = $settings->getClientSecret();
     if (!$client_id || !$client_secret) {

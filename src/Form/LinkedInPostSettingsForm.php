@@ -5,15 +5,13 @@ namespace Drupal\social_post_linkedin\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Path\PathValidatorInterface;
 use Drupal\Core\Routing\RequestContext;
-use Drupal\Core\Routing\RouteProviderInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Settings form for Social Post Linkedin.
+ * Settings form for Social Post LinkedIn.
  */
-class LinkedinPostSettingsForm extends ConfigFormBase {
+class LinkedInPostSettingsForm extends ConfigFormBase {
 
   /**
    * The request context.
@@ -27,15 +25,11 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
-   * @param \Drupal\Core\Routing\RouteProviderInterface $route_provider
-   *   Used to check if route exists.
-   * @param \Drupal\Core\Path\PathValidatorInterface $path_validator
-   *   Used to check if path is valid and exists.
    * @param \Drupal\Core\Routing\RequestContext $request_context
    *   Holds information about the current request.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, RouteProviderInterface $route_provider, PathValidatorInterface $path_validator, RequestContext $request_context) {
-    parent::__construct($config_factory, $route_provider, $path_validator);
+  public function __construct(ConfigFactoryInterface $config_factory, RequestContext $request_context) {
+    parent::__construct($config_factory);
     $this->requestContext = $request_context;
   }
 
@@ -47,8 +41,6 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
     return new static(
     // Load the services required to construct this class.
       $container->get('config.factory'),
-      $container->get('router.route_provider'),
-      $container->get('path.validator'),
       $container->get('router.request_context')
     );
   }
@@ -75,9 +67,9 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
 
     $form['linkedin_settings'] = [
       '#type' => 'details',
-      '#title' => $this->t('Linkedin Client settings'),
+      '#title' => $this->t('LinkedIn Client settings'),
       '#open' => TRUE,
-      '#description' => $this->t('You need to first create a Linkedin App at <a href="@linkedin-dev">@linkedin-dev</a>', ['@linkedin-dev' => 'https://www.linkedin.com/secure/developer?newapp=']),
+      '#description' => $this->t('You need to first create a LinkedIn App at <a href="@linkedin-dev">@linkedin-dev</a>', ['@linkedin-dev' => 'https://www.linkedin.com/secure/developer']),
     ];
 
     $form['linkedin_settings']['client_id'] = [
@@ -85,7 +77,7 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#title' => $this->t('Client ID'),
       '#default_value' => $config->get('client_id'),
-      '#description' => $this->t('Copy the Client ID of your Linkedin App here. This value can be found from your App Dashboard.'),
+      '#description' => $this->t('Copy the Client ID of your LinkedIn App here. This value can be found from your App Dashboard.'),
     ];
 
     $form['linkedin_settings']['client_secret'] = [
@@ -93,14 +85,14 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#title' => $this->t('Client Secret'),
       '#default_value' => $config->get('client_secret'),
-      '#description' => $this->t('Copy the Client Secret of your Linkedin App here. This value can be found from your App Dashboard.'),
+      '#description' => $this->t('Copy the Client Secret of your LinkedIn App here. This value can be found from your App Dashboard.'),
     ];
 
     $form['linkedin_settings']['oauth_redirect_url'] = [
       '#type' => 'textfield',
       '#disabled' => TRUE,
       '#title' => $this->t('Valid OAuth redirect URIs'),
-      '#description' => $this->t('Copy this value to <em>Valid OAuth redirect URIs</em> field of your Linkedin App settings.'),
+      '#description' => $this->t('Copy this value to <em>Valid OAuth redirect URIs</em> field of your LinkedIn App settings.'),
       '#default_value' => $GLOBALS['base_url'] . '/user/social-post/linkedin/auth/callback',
     ];
 
@@ -108,7 +100,7 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#disabled' => TRUE,
       '#title' => $this->t('App Domains'),
-      '#description' => $this->t('Copy this value to <em>App Domains</em> field of your Linkedin App settings.'),
+      '#description' => $this->t('Copy this value to <em>App Domains</em> field of your LinkedIn App settings.'),
       '#default_value' => $this->requestContext->getHost(),
     ];
 
@@ -116,7 +108,7 @@ class LinkedinPostSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#disabled' => TRUE,
       '#title' => $this->t('Site URL'),
-      '#description' => $this->t('Copy this value to <em>Site URL</em> field of your Linkedin App settings.'),
+      '#description' => $this->t('Copy this value to <em>Site URL</em> field of your LinkedIn App settings.'),
       '#default_value' => $GLOBALS['base_url'],
     ];
 

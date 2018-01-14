@@ -5,9 +5,9 @@ namespace Drupal\social_post_linkedin\Plugin\Network;
 use Drupal\social_post\Plugin\Network\SocialPostNetworkInterface;
 
 /**
- * Defines the Linkedin Post interface.
+ * Defines the LinkedIn Post interface.
  */
-interface LinkedinPostInterface extends SocialPostNetworkInterface {
+interface LinkedInPostInterface extends SocialPostNetworkInterface {
 
   /**
    * Wrapper for post method.

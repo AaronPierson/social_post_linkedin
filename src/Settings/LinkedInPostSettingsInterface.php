@@ -3,9 +3,9 @@
 namespace Drupal\social_post_linkedin\Settings;
 
 /**
- * Defines an interface for Social Post Linkedin settings.
+ * Defines an interface for Social Post LinkedIn settings.
  */
-interface LinkedinPostSettingsInterface {
+interface LinkedInPostSettingsInterface {
 
   /**
    * Gets the application ID.

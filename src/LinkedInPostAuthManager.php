@@ -7,10 +7,10 @@ use Drupal\social_post\PostManager\PostManager;
 /**
  * Manages the authorization process and post on user behalf.
  */
-class LinkedinPostAuthManager extends PostManager {
+class LinkedInPostAuthManager extends PostManager {
 
   /**
-   * The Linkedin client object.
+   * The LinkedIn client object.
    *
    * @var \League\OAuth2\Client\Provider\LinkedIn
    */
@@ -32,10 +32,10 @@ class LinkedinPostAuthManager extends PostManager {
   }
 
   /**
-   * Returns the Linkedin login URL where user will be redirected.
+   * Returns the LinkedIn login URL where user will be redirected.
    *
    * @return string
-   *   Absolute Linkedin login URL where user will be redirected
+   *   Absolute LinkedIn login URL where user will be redirected
    */
   public function getLoginUrl() {
     $scopes = [
@@ -55,7 +55,7 @@ class LinkedinPostAuthManager extends PostManager {
    * Gets the data by using the access token returned.
    *
    * @return \League\OAuth2\Client\Provider\LinkedInResourceOwner
-   *   User Info returned by the linkedin.
+   *   User Info returned by the linkedIn.
    */
   public function getUserInfo() {
     if (!$this->user) {
@@ -66,10 +66,10 @@ class LinkedinPostAuthManager extends PostManager {
   }
 
   /**
-   * Returns the Linkedin login URL where user will be redirected.
+   * Returns the LinkedIn login URL where user will be redirected.
    *
    * @return string
-   *   Absolute Linkedin login URL where user will be redirected
+   *   Absolute LinkedIn login URL where user will be redirected
    */
   public function getState() {
     $state = $this->client->getState();

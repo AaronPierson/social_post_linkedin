@@ -7,16 +7,16 @@ use Drupal\social_api\Plugin\NetworkManager;
 use Drupal\social_post\SocialPostDataHandler;
 
 use Drupal\social_post\SocialPostManager;
-use Drupal\social_post_linkedin\LinkedinPostAuthManager;
+use Drupal\social_post_linkedin\LinkedInPostAuthManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
 /**
- * Returns responses for Simple Linkedin Connect module routes.
+ * Returns responses for Simple LinkedIn Connect module routes.
  */
-class LinkedinPostController extends ControllerBase {
+class LinkedInPostController extends ControllerBase {
 
   /**
    * The network plugin manager.
@@ -26,11 +26,11 @@ class LinkedinPostController extends ControllerBase {
   private $networkManager;
 
   /**
-   * The Linkedin authentication manager.
+   * The LinkedIn authentication manager.
    *
-   * @var \Drupal\social_auth_linkedin\LinkedinAuthManager
+   * @var \Drupal\social_auth_linkedin\LinkedInAuthManager
    */
-  private $linkedinManager;
+  private $linkedInManager;
 
   /**
    * The Social Auth Data Handler.
@@ -61,13 +61,13 @@ class LinkedinPostController extends ControllerBase {
   protected $postManager;
 
   /**
-   * LinkedinAuthController constructor.
+   * LinkedInAuthController constructor.
    *
    * @param \Drupal\social_api\Plugin\NetworkManager $network_manager
    *   Used to get an instance of social_auth_linkedin network plugin.
    * @param \Drupal\social_post\SocialPostManager $user_manager
    *   Manages user login/registration.
-   * @param \Drupal\social_post_linkedin\LinkedinPostAuthManager $linkedin_manager
+   * @param \Drupal\social_post_linkedin\LinkedInPostAuthManager $linkedin_manager
    *   Used to manage authentication methods.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request
    *   Used to access GET parameters.
@@ -78,14 +78,14 @@ class LinkedinPostController extends ControllerBase {
    */
   public function __construct(NetworkManager $network_manager,
                               SocialPostManager $user_manager,
-                              LinkedinPostAuthManager $linkedin_manager,
+                              LinkedInPostAuthManager $linkedin_manager,
                               RequestStack $request,
                               SocialPostDataHandler $data_handler,
                               LoggerChannelFactoryInterface $logger_factory) {
 
     $this->networkManager = $network_manager;
     $this->postManager = $user_manager;
-    $this->linkedinManager = $linkedin_manager;
+    $this->linkedInManager = $linkedin_manager;
     $this->request = $request;
     $this->dataHandler = $data_handler;
     $this->loggerFactory = $logger_factory;
@@ -111,27 +111,25 @@ class LinkedinPostController extends ControllerBase {
   }
 
   /**
-   * Redirects the user to Linkedin for authentication.
+   * Redirects the user to LinkedIn for authentication.
    */
   public function redirectToProvider() {
     /* @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
     $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
 
-    // If linkedin client could not be obtained.
+    // If LinkedIn client could not be obtained.
     if (!$linkedin) {
-      drupal_set_message($this->t('Social Post Linkedin not configured properly. Contact site administrator.'), 'error');
+      drupal_set_message($this->t('Social Post LinkedIn not configured properly. Contact site administrator.'), 'error');
       return $this->redirect('user.login');
     }
 
-    // Linkedin service was returned, inject it to $linkedinManager.
-    $this->linkedinManager->setClient($linkedin);
+    // LinkedIn service was returned, inject it to $linkedInManager.
+    $this->linkedInManager->setClient($linkedin);
 
-    // Generates the URL where the user will be redirected for Linkedin login.
-    // If the user did not have email permission granted on previous attempt,
-    // we use the re-request URL requesting only the email address.
-    $linkedin_login_url = $this->linkedinManager->getLoginUrl();
+    // Generates the URL where the user will be redirected for LinkedIn login.
+    $linkedin_login_url = $this->linkedInManager->getLoginUrl();
 
-    $state = $this->linkedinManager->getState();
+    $state = $this->linkedInManager->getState();
 
     $this->dataHandler->set('oauth2state', $state);
 
@@ -141,22 +139,22 @@ class LinkedinPostController extends ControllerBase {
   /**
    * Response for path 'user/login/linkedin/callback'.
    *
-   * Linkedin returns the user here after user has authenticated in Linkedin.
+   * LinkedIn returns the user here after user has authenticated in LinkedIn.
    */
   public function callback() {
-    // Checks if user cancel login via Linkedin.
+    // Checks if user cancel login via LinkedIn.
     $error = $this->request->getCurrentRequest()->get('error');
-    if ($error == 'access_denied') {
+    if ($error == 'user_cancelled_authorize') {
       drupal_set_message($this->t('You could not be authenticated.'), 'error');
-      return $this->redirect('user.login');
+      return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
     }
 
-    /* @var \League\OAuth2\Client\Provider\Linkedin false $linkedin */
+    /* @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
     $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
 
-    // If linkedin client could not be obtained.
+    // If LinkedIn client could not be obtained.
     if (!$linkedin) {
-      drupal_set_message($this->t('Social Auth Linkedin not configured properly. Contact site administrator.'), 'error');
+      drupal_set_message($this->t('Social Auth LinkedIn not configured properly. Contact site administrator.'), 'error');
       return $this->redirect('user.login');
     }
 
@@ -169,18 +167,18 @@ class LinkedinPostController extends ControllerBase {
       return $this->redirect('user.login');
     }
 
-    $this->linkedinManager->setClient($linkedin)->authenticate();
+    $this->linkedInManager->setClient($linkedin)->authenticate();
 
-    if (!$linkedin_profile = $this->linkedinManager->getUserInfo()) {
-      drupal_set_message($this->t('Linkedin login failed, could not load Linkedin profile. Contact site administrator.'), 'error');
+    if (!$linkedin_profile = $this->linkedInManager->getUserInfo()) {
+      drupal_set_message($this->t('LinkedIn login failed, could not load LinkedIn profile. Contact site administrator.'), 'error');
       return $this->redirect('user.login');
     }
 
-    $user = $this->linkedinManager->getUserInfo();
+    $user = $this->linkedInManager->getUserInfo();
 
     if (!$this->postManager->checkIfUserExists($user->getId())) {
       $name = $user->getFirstName() . ' ' . $user->getLastName();
-      $this->postManager->addRecord($name, $user->getId(), $this->linkedinManager->getAccessToken());
+      $this->postManager->addRecord($name, $user->getId(), $this->linkedInManager->getAccessToken());
       drupal_set_message('Account added successfully.', 'status');
     }
     else {

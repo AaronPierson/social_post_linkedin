@@ -1,5 +1,5 @@
 social_post_linkedin.settings:
-  title: 'Linkedin'
+  title: 'LinkedIn'
   route_name: social_post_linkedin.settings_form
   base_route: social_post.integrations
 

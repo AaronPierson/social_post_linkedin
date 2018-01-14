@@ -5,9 +5,9 @@ namespace Drupal\social_post_linkedin\Settings;
 use Drupal\social_api\Settings\SettingsBase;
 
 /**
- * Returns the app information.
+ * Returns the LinkedIn app information.
  */
-class LinkedinPostSettings extends SettingsBase implements LinkedinPostSettingsInterface {
+class LinkedInPostSettings extends SettingsBase implements LinkedInPostSettingsInterface {
 
   /**
    * Clients ID.
