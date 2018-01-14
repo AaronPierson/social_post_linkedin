@@ -174,15 +174,13 @@ class LinkedInPostController extends ControllerBase {
       return $this->redirect('user.login');
     }
 
-    $user = $this->linkedInManager->getUserInfo();
-
-    if (!$this->postManager->checkIfUserExists($user->getId())) {
-      $name = $user->getFirstName() . ' ' . $user->getLastName();
-      $this->postManager->addRecord($name, $user->getId(), $this->linkedInManager->getAccessToken());
-      drupal_set_message('Account added successfully.', 'status');
+    if (!$this->postManager->checkIfUserExists($linkedin_profile->getId())) {
+      $name = $linkedin_profile->getFirstName() . ' ' . $linkedin_profile->getLastName();
+      $this->postManager->addRecord($name, $linkedin_profile->getId(), $this->linkedInManager->getAccessToken());
+      drupal_set_message($this->t('Account added successfully.'), 'status');
     }
     else {
-      drupal_set_message('You have already authorized to post on behalf of this user.', 'warning');
+      drupal_set_message($this->t('You have already authorized to post on behalf of this user.'), 'warning');
     }
 
     return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
