@@ -185,7 +185,7 @@ class LinkedInPost extends SocialPostNetwork {
       ->withAddedHeader('x-li-format', 'json')
       ->withBody($body);
 
-    $response = $this->client->getHttpClient()->send($request);
+    $response = $this->client->getResponse($request);
 
     if ($response->getStatusCode() !== 201) {
       $this->loggerFactory->get('social_post_linkedin')->error($response->getBody()->__toString());
