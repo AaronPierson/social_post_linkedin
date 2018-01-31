@@ -127,7 +127,7 @@ class LinkedInPostController extends ControllerBase {
     $this->linkedInManager->setClient($linkedin);
 
     // Generates the URL where the user will be redirected for LinkedIn login.
-    $linkedin_login_url = $this->linkedInManager->getLoginUrl();
+    $linkedin_login_url = $this->linkedInManager->getAuthorizationUrl();
 
     $state = $this->linkedInManager->getState();
 
