@@ -96,22 +96,6 @@ class LinkedInPostSettingsForm extends ConfigFormBase {
       '#default_value' => $GLOBALS['base_url'] . '/user/social-post/linkedin/auth/callback',
     ];
 
-    $form['linkedin_settings']['app_domains'] = [
-      '#type' => 'textfield',
-      '#disabled' => TRUE,
-      '#title' => $this->t('App Domains'),
-      '#description' => $this->t('Copy this value to <em>App Domains</em> field of your LinkedIn App settings.'),
-      '#default_value' => $this->requestContext->getHost(),
-    ];
-
-    $form['linkedin_settings']['site_url'] = [
-      '#type' => 'textfield',
-      '#disabled' => TRUE,
-      '#title' => $this->t('Site URL'),
-      '#description' => $this->t('Copy this value to <em>Site URL</em> field of your LinkedIn App settings.'),
-      '#default_value' => $GLOBALS['base_url'],
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 
