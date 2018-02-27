@@ -1,4 +1,4 @@
-social_auth_linkedin.settings:
+social_post_linkedin.settings:
   type: config_object
   label: 'Social Post LinkedIn settings'
   mapping:
