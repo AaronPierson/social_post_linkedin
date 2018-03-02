@@ -5,7 +5,6 @@ namespace Drupal\social_post_linkedin\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\social_api\Plugin\NetworkManager;
 use Drupal\social_post\SocialPostDataHandler;
-
 use Drupal\social_post\SocialPostManager;
 use Drupal\social_post_linkedin\LinkedInPostAuthManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -28,7 +27,7 @@ class LinkedInPostController extends ControllerBase {
   /**
    * The LinkedIn authentication manager.
    *
-   * @var \Drupal\social_auth_linkedin\LinkedInAuthManager
+   * @var \Drupal\social_post_linkedin\LinkedInPostAuthManager
    */
   private $linkedInManager;
 
