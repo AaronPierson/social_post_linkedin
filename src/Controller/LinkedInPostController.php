@@ -63,7 +63,7 @@ class LinkedInPostController extends ControllerBase {
    * LinkedInAuthController constructor.
    *
    * @param \Drupal\social_api\Plugin\NetworkManager $network_manager
-   *   Used to get an instance of social_auth_linkedin network plugin.
+   *   Used to get an instance of social_post_linkedin network plugin.
    * @param \Drupal\social_post\SocialPostManager $user_manager
    *   Manages user login/registration.
    * @param \Drupal\social_post_linkedin\LinkedInPostAuthManager $linkedin_manager
