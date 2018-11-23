@@ -3,6 +3,7 @@
 namespace Drupal\social_post_linkedin\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\social_api\Plugin\NetworkManager;
 use Drupal\social_post\SocialPostDataHandler;
 use Drupal\social_post\SocialPostManager;
@@ -60,6 +61,13 @@ class LinkedInPostController extends ControllerBase {
   protected $postManager;
 
   /**
+   * The Messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  /**
    * LinkedInAuthController constructor.
    *
    * @param \Drupal\social_api\Plugin\NetworkManager $network_manager
@@ -74,13 +82,16 @@ class LinkedInPostController extends ControllerBase {
    *   SocialAuthDataHandler object.
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
    *   Used for logging errors.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger service.
    */
   public function __construct(NetworkManager $network_manager,
                               SocialPostManager $user_manager,
                               LinkedInPostAuthManager $linkedin_manager,
                               RequestStack $request,
                               SocialPostDataHandler $data_handler,
-                              LoggerChannelFactoryInterface $logger_factory) {
+                              LoggerChannelFactoryInterface $logger_factory,
+                              MessengerInterface $messenger) {
 
     $this->networkManager = $network_manager;
     $this->postManager = $user_manager;
@@ -88,6 +99,7 @@ class LinkedInPostController extends ControllerBase {
     $this->request = $request;
     $this->dataHandler = $data_handler;
     $this->loggerFactory = $logger_factory;
+    $this->messenger = $messenger;
 
     $this->postManager->setPluginId('social_post_linkedin');
 
@@ -105,7 +117,8 @@ class LinkedInPostController extends ControllerBase {
       $container->get('linkedin_post.auth_manager'),
       $container->get('request_stack'),
       $container->get('social_post.data_handler'),
-      $container->get('logger.factory')
+      $container->get('logger.factory'),
+      $container->get('messenger')
     );
   }
 
@@ -118,7 +131,7 @@ class LinkedInPostController extends ControllerBase {
 
     // If LinkedIn client could not be obtained.
     if (!$linkedin) {
-      drupal_set_message($this->t('Social Post LinkedIn not configured properly. Contact site administrator.'), 'error');
+      $this->messenger->addError($this->t('Social Post LinkedIn not configured properly. Contact site administrator.'));
       return $this->redirect('user.login');
     }
 
@@ -144,7 +157,7 @@ class LinkedInPostController extends ControllerBase {
     // Checks if user cancel login via LinkedIn.
     $error = $this->request->getCurrentRequest()->get('error');
     if ($error == 'user_cancelled_authorize') {
-      drupal_set_message($this->t('You could not be authenticated.'), 'error');
+      $this->messenger->addError($this->t('You could not be authenticated.'));
       return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
     }
 
@@ -153,7 +166,7 @@ class LinkedInPostController extends ControllerBase {
 
     // If LinkedIn client could not be obtained.
     if (!$linkedin) {
-      drupal_set_message($this->t('Social Auth LinkedIn not configured properly. Contact site administrator.'), 'error');
+      $this->messenger->addError($this->t('Social Auth LinkedIn not configured properly. Contact site administrator.'));
       return $this->redirect('user.login');
     }
 
@@ -162,24 +175,24 @@ class LinkedInPostController extends ControllerBase {
     $retrievedState = $this->request->getCurrentRequest()->query->get('state');
     if (empty($retrievedState) || ($retrievedState !== $state)) {
       $this->postManager->nullifySessionKeys();
-      drupal_set_message($this->t('LinkedIn login failed. Unvalid OAuth2 state.'), 'error');
+      $this->messenger->addError($this->t('LinkedIn login failed. Unvalid OAuth2 state.'));
       return $this->redirect('user.login');
     }
 
     $this->linkedInManager->setClient($linkedin)->authenticate();
 
     if (!$linkedin_profile = $this->linkedInManager->getUserInfo()) {
-      drupal_set_message($this->t('LinkedIn login failed, could not load LinkedIn profile. Contact site administrator.'), 'error');
+      $this->messenger->addError($this->t('LinkedIn login failed, could not load LinkedIn profile. Contact site administrator.'));
       return $this->redirect('user.login');
     }
 
     if (!$this->postManager->checkIfUserExists($linkedin_profile->getId())) {
       $name = $linkedin_profile->getFirstName() . ' ' . $linkedin_profile->getLastName();
       $this->postManager->addRecord($name, $linkedin_profile->getId(), $this->linkedInManager->getAccessToken());
-      drupal_set_message($this->t('Account added successfully.'), 'status');
+      $this->messenger->addStatus($this->t('Account added successfully.'));
     }
     else {
-      drupal_set_message($this->t('You have already authorized to post on behalf of this user.'), 'warning');
+      $this->messenger->addWarning($this->t('You have already authorized to post on behalf of this user.'));
     }
 
     return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
