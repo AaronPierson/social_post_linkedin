@@ -2,9 +2,10 @@
 
 namespace Drupal\social_post_linkedin\Controller;
 
-use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\social_api\Plugin\NetworkManager;
+use Drupal\social_post\Controller\ControllerBase;
+use Drupal\social_post\Entity\Controller\SocialPostListBuilder;
 use Drupal\social_post\SocialPostDataHandler;
 use Drupal\social_post\SocialPostManager;
 use Drupal\social_post_linkedin\LinkedInPostAuthManager;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
 /**
- * Returns responses for Simple LinkedIn Connect module routes.
+ * Returns responses for Social Post LinkedIn routes.
  */
 class LinkedInPostController extends ControllerBase {
 
@@ -80,6 +81,8 @@ class LinkedInPostController extends ControllerBase {
    *   Used to access GET parameters.
    * @param \Drupal\social_post\SocialPostDataHandler $data_handler
    *   SocialAuthDataHandler object.
+   * @param \Drupal\social_post\Entity\Controller\SocialPostListBuilder $list_builder
+   *   The Social Post entity list builder.
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
    *   Used for logging errors.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
@@ -90,6 +93,7 @@ class LinkedInPostController extends ControllerBase {
                               LinkedInPostAuthManager $linkedin_manager,
                               RequestStack $request,
                               SocialPostDataHandler $data_handler,
+                              SocialPostListBuilder $list_builder,
                               LoggerChannelFactoryInterface $logger_factory,
                               MessengerInterface $messenger) {
 
@@ -98,6 +102,7 @@ class LinkedInPostController extends ControllerBase {
     $this->linkedInManager = $linkedin_manager;
     $this->request = $request;
     $this->dataHandler = $data_handler;
+    $this->listBuilder = $list_builder;
     $this->loggerFactory = $logger_factory;
     $this->messenger = $messenger;
 
@@ -117,6 +122,7 @@ class LinkedInPostController extends ControllerBase {
       $container->get('linkedin_post.auth_manager'),
       $container->get('request_stack'),
       $container->get('social_post.data_handler'),
+      $container->get('entity_type.manager')->getListBuilder('social_post'),
       $container->get('logger.factory'),
       $container->get('messenger')
     );

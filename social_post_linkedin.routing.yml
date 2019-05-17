@@ -6,6 +6,15 @@ social_post_linkedin.settings_form:
   requirements:
     _permission: 'administer social api autoposting'
 
+# User collection route.
+social_post_linkedin.user.collection:
+  path: '/admin/config/social-api/social-post/linkedin/users'
+  defaults:
+    _controller: 'Drupal\social_post_linkedin\Controller\LinkedInPostController::buildList'
+    provider: 'linkedin'
+  requirements:
+    _permission: 'view social post user entities'
+
 # Routes for authentication
 social_post_linkedin.redirect_to_linkedin:
   path: '/user/social-post/linkedin/auth'

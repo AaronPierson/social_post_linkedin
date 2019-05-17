@@ -82,7 +82,7 @@ function _social_post_linkedin_user_edit_form(AccountInterface $current_user) {
       '#type' => 'operations',
       '#links' => [
         'delete' => [
-          'title' => t('Delete') ,
+          'title' => t('Delete'),
           'url' => Url::fromRoute('entity.social_post.delete_form',
             [
               'provider' => 'linkedin',
