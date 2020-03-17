@@ -1,3 +1,7 @@
 services:
-  linkedin_post.auth_manager:
-    class: '\Drupal\social_post_linkedin\LinkedInPostAuthManager'
+  linkedin_post.manager:
+    class: '\Drupal\social_post_linkedin\LinkedInPostManager'
+    arguments:
+      - '@config.factory'
+      - '@logger.factory'
+      - '@request_stack'

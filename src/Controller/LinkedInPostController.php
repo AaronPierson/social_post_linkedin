@@ -2,17 +2,17 @@
 
 namespace Drupal\social_post_linkedin\Controller;
 
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\social_api\Plugin\NetworkManager;
 use Drupal\social_post\Controller\ControllerBase;
 use Drupal\social_post\Entity\Controller\SocialPostListBuilder;
 use Drupal\social_post\SocialPostDataHandler;
-use Drupal\social_post\SocialPostManager;
-use Drupal\social_post_linkedin\LinkedInPostAuthManager;
+use Drupal\social_post\User\UserManager;
+use Drupal\social_post_linkedin\LinkedInPostManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Routing\TrustedRedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
 /**
  * Returns responses for Social Post LinkedIn routes.
@@ -73,9 +73,9 @@ class LinkedInPostController extends ControllerBase {
    *
    * @param \Drupal\social_api\Plugin\NetworkManager $network_manager
    *   Used to get an instance of social_post_linkedin network plugin.
-   * @param \Drupal\social_post\SocialPostManager $user_manager
+   * @param \Drupal\social_post\User\UserManager $user_manager
    *   Manages user login/registration.
-   * @param \Drupal\social_post_linkedin\LinkedInPostAuthManager $linkedin_manager
+   * @param \Drupal\social_post_linkedin\LinkedInPostManager $linkedin_manager
    *   Used to manage authentication methods.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request
    *   Used to access GET parameters.
@@ -89,8 +89,8 @@ class LinkedInPostController extends ControllerBase {
    *   The messenger service.
    */
   public function __construct(NetworkManager $network_manager,
-                              SocialPostManager $user_manager,
-                              LinkedInPostAuthManager $linkedin_manager,
+                              UserManager $user_manager,
+                              LinkedInPostManager $linkedin_manager,
                               RequestStack $request,
                               SocialPostDataHandler $data_handler,
                               SocialPostListBuilder $list_builder,
@@ -118,8 +118,8 @@ class LinkedInPostController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('plugin.network.manager'),
-      $container->get('social_post.post_manager'),
-      $container->get('linkedin_post.auth_manager'),
+      $container->get('social_post.user_manager'),
+      $container->get('linkedin_post.manager'),
       $container->get('request_stack'),
       $container->get('social_post.data_handler'),
       $container->get('entity_type.manager')->getListBuilder('social_post'),
@@ -132,7 +132,7 @@ class LinkedInPostController extends ControllerBase {
    * Redirects the user to LinkedIn for authentication.
    */
   public function redirectToProvider() {
-    /* @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
+    /** @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
     $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
 
     // If LinkedIn client could not be obtained.
@@ -157,7 +157,7 @@ class LinkedInPostController extends ControllerBase {
   /**
    * Response for path 'user/login/linkedin/callback'.
    *
-   * LinkedIn returns the user here after user has authenticated in LinkedIn.
+   * LinkedIn returns the user here after user has authenticated.
    */
   public function callback() {
     // Checks if user cancel login via LinkedIn.
@@ -167,7 +167,7 @@ class LinkedInPostController extends ControllerBase {
       return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
     }
 
-    /* @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
+    /** @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
     $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
 
     // If LinkedIn client could not be obtained.
