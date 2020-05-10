@@ -33,7 +33,7 @@ function social_post_linkedin_form_user_form_alter(&$form, FormStateInterface $f
  *   The current user.
  *
  * @return bool
- *   The user can or cannot allow post on his behalf.
+ *   The user can or cannot allow post on their behalf.
  */
 function _social_post_linkedin_can_grant_permission(AccountInterface $current_user) {
   $routeMatch = \Drupal::service('current_route_match');
@@ -71,13 +71,24 @@ function _social_post_linkedin_user_edit_form(AccountInterface $current_user) {
     '#empty' => t('You have not added any accounts yet.'),
   ];
 
-  /* @var \Drupal\social_post\Entity\SocialPost $account */
+  /** @var \Drupal\social_post\Entity\SocialPost $account */
   foreach ($accounts as $id => $account) {
-    $form['social_post_linkedin']['accounts'][$id]['screen_name'] = [
-      '#type' => 'link',
-      '#title' => $account->getName(),
-      '#url' => Url::fromUri('https://linkedin.com/' . $account->getProviderUserId()),
-    ];
+    $link = $account->getLink();
+
+    if ($link->isEmpty()) {
+      $form['social_post_linkedin']['accounts'][$id]['screen_name'] = [
+        '#type' => 'label',
+        '#title' => $account->getName(),
+      ];
+    }
+    else {
+      $form['social_post_linkedin']['accounts'][$id]['screen_name'] = [
+        '#type' => 'link',
+        '#title' => $link->title,
+        '#url' => $link->getUrl(),
+      ];
+    }
+
     $form['social_post_linkedin']['accounts'][$id]['operations'] = [
       '#type' => 'operations',
       '#links' => [
