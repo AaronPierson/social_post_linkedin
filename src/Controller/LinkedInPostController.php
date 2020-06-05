@@ -2,206 +2,66 @@
 
 namespace Drupal\social_post_linkedin\Controller;
 
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
-use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Routing\TrustedRedirectResponse;
-use Drupal\social_api\Plugin\NetworkManager;
-use Drupal\social_post\Controller\ControllerBase;
-use Drupal\social_post\Entity\Controller\SocialPostListBuilder;
-use Drupal\social_post\SocialPostDataHandler;
-use Drupal\social_post\User\UserManager;
-use Drupal\social_post_linkedin\LinkedInPostManager;
+use Drupal\social_post\Controller\OAuth2ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Returns responses for Social Post LinkedIn routes.
  */
-class LinkedInPostController extends ControllerBase {
-
-  /**
-   * The network plugin manager.
-   *
-   * @var \Drupal\social_api\Plugin\NetworkManager
-   */
-  private $networkManager;
-
-  /**
-   * The LinkedIn authentication manager.
-   *
-   * @var \Drupal\social_post_linkedin\LinkedInPostAuthManager
-   */
-  private $linkedInManager;
-
-  /**
-   * The Social Auth Data Handler.
-   *
-   * @var \Drupal\social_post\SocialPostDataHandler
-   */
-  private $dataHandler;
-
-  /**
-   * Used to access GET parameters.
-   *
-   * @var \Symfony\Component\HttpFoundation\RequestStack
-   */
-  private $request;
-
-  /**
-   * The logger channel.
-   *
-   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
-   */
-  protected $loggerFactory;
-
-  /**
-   * The social post manager.
-   *
-   * @var \Drupal\social_post\SocialPostManager
-   */
-  protected $postManager;
-
-  /**
-   * The Messenger service.
-   *
-   * @var \Drupal\Core\Messenger\MessengerInterface
-   */
-  protected $messenger;
-
-  /**
-   * LinkedInAuthController constructor.
-   *
-   * @param \Drupal\social_api\Plugin\NetworkManager $network_manager
-   *   Used to get an instance of social_post_linkedin network plugin.
-   * @param \Drupal\social_post\User\UserManager $user_manager
-   *   Manages user login/registration.
-   * @param \Drupal\social_post_linkedin\LinkedInPostManager $linkedin_manager
-   *   Used to manage authentication methods.
-   * @param \Symfony\Component\HttpFoundation\RequestStack $request
-   *   Used to access GET parameters.
-   * @param \Drupal\social_post\SocialPostDataHandler $data_handler
-   *   SocialAuthDataHandler object.
-   * @param \Drupal\social_post\Entity\Controller\SocialPostListBuilder $list_builder
-   *   The Social Post entity list builder.
-   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
-   *   Used for logging errors.
-   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
-   *   The messenger service.
-   */
-  public function __construct(NetworkManager $network_manager,
-                              UserManager $user_manager,
-                              LinkedInPostManager $linkedin_manager,
-                              RequestStack $request,
-                              SocialPostDataHandler $data_handler,
-                              SocialPostListBuilder $list_builder,
-                              LoggerChannelFactoryInterface $logger_factory,
-                              MessengerInterface $messenger) {
-
-    $this->networkManager = $network_manager;
-    $this->postManager = $user_manager;
-    $this->linkedInManager = $linkedin_manager;
-    $this->request = $request;
-    $this->dataHandler = $data_handler;
-    $this->listBuilder = $list_builder;
-    $this->loggerFactory = $logger_factory;
-    $this->messenger = $messenger;
-
-    $this->postManager->setPluginId('social_post_linkedin');
-
-    // Sets session prefix for data handler.
-    $this->dataHandler->setSessionPrefix('social_post_linkedin');
-  }
+class LinkedInPostController extends OAuth2ControllerBase {
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
+      'Social Post Linkedin',
+      'social_post_linkedin',
       $container->get('plugin.network.manager'),
-      $container->get('social_post.user_manager'),
+      $container->get('social_post.user_authenticator'),
       $container->get('linkedin_post.manager'),
       $container->get('request_stack'),
       $container->get('social_post.data_handler'),
-      $container->get('entity_type.manager')->getListBuilder('social_post'),
-      $container->get('logger.factory'),
-      $container->get('messenger')
+      $container->get('renderer'),
+      $container->get('entity_type.manager')->getListBuilder('social_post')
     );
   }
 
   /**
-   * Redirects the user to LinkedIn for authentication.
-   */
-  public function redirectToProvider() {
-    /** @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
-    $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
-
-    // If LinkedIn client could not be obtained.
-    if (!$linkedin) {
-      $this->messenger->addError($this->t('Social Post LinkedIn not configured properly. Contact site administrator.'));
-      return $this->redirect('user.login');
-    }
-
-    // LinkedIn service was returned, inject it to $linkedInManager.
-    $this->linkedInManager->setClient($linkedin);
-
-    // Generates the URL where the user will be redirected for LinkedIn login.
-    $linkedin_login_url = $this->linkedInManager->getAuthorizationUrl();
-
-    $state = $this->linkedInManager->getState();
-
-    $this->dataHandler->set('oauth2state', $state);
-
-    return new TrustedRedirectResponse($linkedin_login_url);
-  }
-
-  /**
-   * Response for path 'user/login/linkedin/callback'.
+   * Response for path 'user/social-post/linkedin/auth/callback'.
    *
    * LinkedIn returns the user here after user has authenticated.
    */
   public function callback() {
-    // Checks if user cancel login via LinkedIn.
-    $error = $this->request->getCurrentRequest()->get('error');
-    if ($error == 'user_cancelled_authorize') {
-      $this->messenger->addError($this->t('You could not be authenticated.'));
-      return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
+    // Checks if there was an authentication error.
+    $redirect = $this->checkAuthError();
+    if ($redirect) {
+      return $redirect;
     }
 
-    /** @var \League\OAuth2\Client\Provider\LinkedIn|false $linkedin */
-    $linkedin = $this->networkManager->createInstance('social_post_linkedin')->getSdk();
+    /** @var \League\OAuth2\Client\Provider\LinkedInResourceOwner|null $profile */
+    $profile = $this->processCallback();
 
-    // If LinkedIn client could not be obtained.
-    if (!$linkedin) {
-      $this->messenger->addError($this->t('Social Auth LinkedIn not configured properly. Contact site administrator.'));
-      return $this->redirect('user.login');
+    // If authentication was successful.
+    if ($profile !== NULL) {
+
+      if (!$this->userAuthenticator->getDrupalUserId($profile->getId())) {
+        $name = $profile->getFirstName() . ' ' . $profile->getLastName();
+        $id = $profile->getId();
+        $url = $profile->getUrl();
+
+        $this->userAuthenticator->addUserRecord($name, $id, $url, $this->providerManager->getAccessToken());
+
+        $this->messenger()->addStatus($this->t('Account added successfully.'));
+      }
+      else {
+        $this->messenger()->addWarning($this->t('You have already authorized to post on behalf of this user.'));
+      }
     }
 
-    $state = $this->dataHandler->get('oauth2state');
-    // Retrieves $_GET['state'].
-    $retrievedState = $this->request->getCurrentRequest()->query->get('state');
-    if (empty($retrievedState) || ($retrievedState !== $state)) {
-      $this->postManager->nullifySessionKeys();
-      $this->messenger->addError($this->t('LinkedIn login failed. Unvalid OAuth2 state.'));
-      return $this->redirect('user.login');
-    }
-
-    $this->linkedInManager->setClient($linkedin)->authenticate();
-
-    if (!$linkedin_profile = $this->linkedInManager->getUserInfo()) {
-      $this->messenger->addError($this->t('LinkedIn login failed, could not load LinkedIn profile. Contact site administrator.'));
-      return $this->redirect('user.login');
-    }
-
-    if (!$this->postManager->checkIfUserExists($linkedin_profile->getId())) {
-      $name = $linkedin_profile->getFirstName() . ' ' . $linkedin_profile->getLastName();
-      $this->postManager->addRecord($name, $linkedin_profile->getId(), $this->linkedInManager->getAccessToken());
-      $this->messenger->addStatus($this->t('Account added successfully.'));
-    }
-    else {
-      $this->messenger->addWarning($this->t('You have already authorized to post on behalf of this user.'));
-    }
-
-    return $this->redirect('entity.user.edit_form', ['user' => $this->postManager->getCurrentUser()]);
+    return $this->redirect('entity.user.edit_form', [
+      'user' => $this->userAuthenticator->currentUser()->id(),
+    ]);
   }
 
 }
