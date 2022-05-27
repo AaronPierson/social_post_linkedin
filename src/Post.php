@@ -98,16 +98,11 @@ class Post {
       'author' => 'urn:li:'. $this->profileType .':' . $this->author, 'lifecycleState' => $this->lifeCycle,
       'specificContent' => [
         'com.linkedin.ugc.ShareContent' => [
-          // 'media' => [
-          //   // 'media' => 'urn:li:digitalmediaRecipe:feedshare-image:',
-          //   // 'status' => 'READY',
-          // ],
           'shareCommentary' => [
             'text' => $this->text,
           ],
           // TODO: Support media.
           'shareMediaCategory' => 'NONE',
-          // 'shareMediaCategory' => 'RICH',
         ],
       ],
       'visibility' => [
