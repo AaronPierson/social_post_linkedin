@@ -55,6 +55,7 @@ class LinkedInPostManager extends OAuth2Manager {
       'r_liteprofile',
       'r_emailaddress',
       'w_member_social',
+      'w_organization_social',
     ];
 
     return $this->client->getAuthorizationUrl([

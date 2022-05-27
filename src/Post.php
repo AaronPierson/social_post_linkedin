@@ -22,7 +22,12 @@ class Post {
    * @var string
    */
   protected $author;
-
+  /**
+   * The profile type: person or organization
+   *
+   * @var string
+   */
+  protected $profileType = 'organization';
   /**
    * The post's visitibility. PUBLIC or CONNECTIONS.
    *
@@ -73,9 +78,13 @@ class Post {
     $this->author = $author;
   }
 
+  public function setProfileType($profileType) {
+    $this->profileType = $profileType;
+  }
+
   /**
    * Returns the body of the share request in json format.
-   *
+   * sets the profile type: person or organization.
    * @return string
    *   The body of the share request.
    */
@@ -86,16 +95,19 @@ class Post {
     }
 
     $status = [
-      'author' => 'urn:li:person:' . $this->author,
-      'lifecycleState' => $this->lifeCycle,
+      'author' => 'urn:li:'. $this->profileType .':' . $this->author, 'lifecycleState' => $this->lifeCycle,
       'specificContent' => [
         'com.linkedin.ugc.ShareContent' => [
+          // 'media' => [
+          //   // 'media' => 'urn:li:digitalmediaRecipe:feedshare-image:',
+          //   // 'status' => 'READY',
+          // ],
           'shareCommentary' => [
             'text' => $this->text,
           ],
-
           // TODO: Support media.
           'shareMediaCategory' => 'NONE',
+          // 'shareMediaCategory' => 'RICH',
         ],
       ],
       'visibility' => [
