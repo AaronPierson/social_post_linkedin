@@ -1,3 +1,5 @@
+Modify module to allow posting on organization pages
+
 CONTENTS OF THIS FILE
 ---------------------
 
